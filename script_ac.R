@@ -33,7 +33,7 @@ stadiamaps_key()
 don <- read.csv("./data/BD_EAE_faunique_Quebec.csv")
 
 don_poissons_rouges <- don |> 
-  filter(don$especes == 'Carassius auratus')
+  filter(especes == 'Carassius auratus')
 
 # bounding box
 polygone <- c(left =-75.7 , bottom = 45.0 , right =-68.8 , top = 48.5 )
