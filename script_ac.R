@@ -7,6 +7,7 @@
 
 library(ggmap)
 library(tidyverse)
+library(dplyr)
 
 # Set current dir relative to script as working dir
 dir <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -47,7 +48,9 @@ fond <- get_stadiamap(bbox=polygone, zoom=7,
                       maptype="stamen_terrain")
 ggmap(fond)
 carte <-ggmap(fond) + 
-  geom_point(data = don_poissons_rouges, aes(longitude,latitude),color = "red", size=1,alpha=0.5) +
+  geom_point(data = don_poissons_rouges, 
+             aes(longitude,latitude),
+             color = "red", size=1,alpha=0.5) +
   theme_classic()
 carte
 
@@ -76,10 +79,40 @@ fond <- get_stadiamap(bbox=polygone, zoom=10,
                       maptype="stamen_terrain")
 ggmap(fond)
 carte <-ggmap(fond) + 
-  geom_point(data = sum_don_poissons_rouges, aes(longitude,latitude),color = "red", size=1,alpha=0.5) +
+  geom_point(data = sum_don_poissons_rouges, 
+             aes(longitude,latitude),
+             color = "red", size=1,alpha=0.5) +
   theme_classic()
 carte
-ggsave('./output/carte_lac_castor_mtl.pdf',
-       carte,width=4,height=4)
+ggsave('./output/carte_lac_castor_mtl.pdf',carte,width=4,height=4)
+
+###############################################################################
+# 3. Growth
+#
+
+# Convert str to date
+don_poissons_rouges$date <- as.Date(don_poissons_rouges$date, format="%Y-%m-%d")
+
+
+# New col for year
+periode_don_poissons_rouges <- don_poissons_rouges |> 
+  mutate(annee = as.numeric(format(date,"%Y")))
+
+
+# Group data by year
+moy_obs <- periode_don_poissons_rouges |> group_by(annee) |>
+  summarise(nb = n()) 
+
+# nb by year drop data without dates
+graph <- moy_obs |> drop_na() |>
+  ggplot(mapping = aes(x = annee,y = nb)) + 
+  geom_point () + 
+  theme_bw() + labs(
+    x = "Année",
+    y = "Observations de poissons rouges au Québec"
+  ) + geom_line()
+ggsave('./output/graph_croissance_observations_qc.pdf',graph,width=6,height=4)
+       
+
 # Citations :
 citation("ggmap")
