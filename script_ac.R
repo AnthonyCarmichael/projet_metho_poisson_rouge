@@ -34,8 +34,14 @@ stadiamaps_key()
 # load data
 don <- read.csv("./data/BD_EAE_faunique_Quebec.csv")
 
+don$date <- as.Date(don$date, format="%Y-%m-%d")
+don <- don |> 
+  mutate(annee = as.numeric(format(date,"%Y")))
+
 don_poissons_rouges <- don |> 
   filter(especes == 'Carassius auratus')
+
+
 
 ################################################################################
 # 1. Dispertion map
@@ -90,21 +96,12 @@ ggsave('./output/carte_lac_castor_mtl.pdf',carte,width=4,height=4)
 # 3. Growth
 #
 
-# Convert str to date
-don_poissons_rouges$date <- as.Date(don_poissons_rouges$date, format="%Y-%m-%d")
-
-
-# New col for year
-periode_don_poissons_rouges <- don_poissons_rouges |> 
-  mutate(annee = as.numeric(format(date,"%Y")))
-
-
 # Group data by year
-moy_obs <- periode_don_poissons_rouges |> group_by(annee) |>
+nb_by_year <- don_poissons_rouges |> group_by(annee) |>
   summarise(nb = n()) 
 
 # nb by year drop data without dates
-graph <- moy_obs |> drop_na() |>
+graph <- nb_by_year |> drop_na() |>
   ggplot(mapping = aes(x = annee,y = nb)) + 
   geom_point () + 
   theme_bw() + labs(
@@ -112,7 +109,25 @@ graph <- moy_obs |> drop_na() |>
     y = "Observations de poissons rouges au Québec"
   ) + geom_line()
 ggsave('./output/graph_croissance_observations_qc.pdf',graph,width=6,height=4)
-       
+
+################################################################################
+# most commun observed species in montreal from 2020 - 2025 
+#
+most_commun_species_in_mtl <- don |>
+  filter(region == "Montréal" & annee>=2020 & annee <= 2025) |>
+  group_by(nom_commun) |>
+  mutate(nb = n()) |>
+  ungroup() 
+  #filter(nb >= 10)
+
+graph2 <- most_commun_species_in_mtl |>
+  ggplot(mapping = aes(x = reorder(nom_commun,-nb))) + 
+  geom_bar()+
+  theme_bw() + labs(
+    x = "Nom commun",
+    y = "Observations")
+graph2
+ggsave('./output/graph_distribution_especes_mtl_2020_2025.pdf',graph2,width=12,height=4)
 
 # Citations :
 citation("ggmap")
